@@ -1,0 +1,7 @@
+flowchart LR
+    Browser["React + TypeScript dashboard"] -->|REST + JWT| API["Spring Boot backend (Java 21)"]
+    Browser -->|SSE live metrics| API
+    API -->|JPA + Flyway| DB[("PostgreSQL")]
+    API -->|"HTTP, 3s timeout, graceful fallback"| AI["FastAPI AI service"]
+    AI --- Models["TF-IDF + LogReg classifier / Isolation Forest"]
+    Sim["Metric simulator (SYNTHETIC)"] -->|POST /monitoring/metrics| API

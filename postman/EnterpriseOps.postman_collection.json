@@ -1,0 +1,41 @@
+{
+  "info": { "name": "EnterpriseOps AI", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api/v1" },
+    { "key": "email", "value": "admin@enterpriseops.local" },
+    { "key": "password", "value": "" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": { "type": "bearer", "bearer": [ { "key": "token", "value": "{{token}}", "type": "string" } ] },
+  "item": [
+    { "name": "Login", "event": [ { "listen": "test", "script": { "exec": [
+        "pm.test('login ok', () => pm.response.to.have.status(200));",
+        "pm.collectionVariables.set('token', pm.response.json().token);" ] } } ],
+      "request": { "auth": { "type": "noauth" }, "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": "{{baseUrl}}/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"{{email}}\",\"password\":\"{{password}}\"}" } } },
+    { "name": "Login with wrong password (expects 401)", "event": [ { "listen": "test", "script": { "exec": [ "pm.test('401', () => pm.response.to.have.status(401));" ] } } ],
+      "request": { "auth": { "type": "noauth" }, "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": "{{baseUrl}}/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"{{email}}\",\"password\":\"wrong-password\"}" } } },
+    { "name": "Tickets without token (expects 401)", "event": [ { "listen": "test", "script": { "exec": [ "pm.test('401', () => pm.response.to.have.status(401));" ] } } ],
+      "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/tickets" } },
+    { "name": "Create ticket", "event": [ { "listen": "test", "script": { "exec": [
+        "pm.test('created', () => pm.response.to.have.status(201));",
+        "pm.collectionVariables.set('ticketId', pm.response.json().id);" ] } } ],
+      "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ], "url": "{{baseUrl}}/tickets",
+        "body": { "mode": "raw", "raw": "{\"title\":\"VPN keeps dropping\",\"description\":\"Since this morning\",\"priority\":\"HIGH\"}" } } },
+    { "name": "List tickets", "request": { "method": "GET", "url": "{{baseUrl}}/tickets?status=OPEN&page=0&size=10" } },
+    { "name": "Move ticket to IN_PROGRESS", "request": { "method": "PATCH", "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": "{{baseUrl}}/tickets/{{ticketId}}/status", "body": { "mode": "raw", "raw": "{\"status\":\"IN_PROGRESS\"}" } } },
+    { "name": "Invalid transition OPEN to CLOSED (expects 400)", "event": [ { "listen": "test", "script": { "exec": [ "pm.test('400', () => pm.response.to.have.status(400));" ] } } ],
+      "request": { "method": "PATCH", "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": "{{baseUrl}}/tickets/{{ticketId}}/status", "body": { "mode": "raw", "raw": "{\"status\":\"CLOSED\"}" } } },
+    { "name": "List incidents", "request": { "method": "GET", "url": "{{baseUrl}}/incidents" } },
+    { "name": "List assets", "request": { "method": "GET", "url": "{{baseUrl}}/assets" } },
+    { "name": "Ingest metric (simulated, assetId must exist)", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": "{{baseUrl}}/monitoring/metrics", "body": { "mode": "raw", "raw": "{\"assetId\":1,\"cpu\":97,\"ram\":55,\"disk\":60,\"networkMbps\":120,\"simulated\":true}" } } },
+    { "name": "Analytics summary", "request": { "method": "GET", "url": "{{baseUrl}}/analytics/summary" } },
+    { "name": "AI recommend", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": "{{baseUrl}}/ai/recommend", "body": { "mode": "raw", "raw": "{\"text\":\"forgot my password\"}" } } },
+    { "name": "Audit logs (admin/manager)", "request": { "method": "GET", "url": "{{baseUrl}}/audit-logs" } }
+  ]
+}

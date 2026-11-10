@@ -1,0 +1,27 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# build output and dependencies
+node_modules/
+dist/
+target/
+__pycache__/
+*.pyc
+.pytest_cache/
+test-results/
+playwright-report/
+
+# generated files (recreate with the commands in the README)
+ai-service/data/*.csv
+ai-service/models/*.joblib
+backend/src/main/resources/db/
+
+# editors and logs
+.idea/
+.vscode/
+*.log
+.DS_Store

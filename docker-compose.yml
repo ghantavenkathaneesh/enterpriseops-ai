@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: enterpriseops
+      POSTGRES_USER: enterpriseops
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U enterpriseops -d enterpriseops"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ai-service:
+    build: ./ai-service
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      db: { condition: service_healthy }
+      ai-service: { condition: service_started }   # the backend still works if the AI service is down
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/enterpriseops
+      DB_USER: enterpriseops
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env (at least 32 characters)}
+      AI_BASE_URL: http://ai-service:8000
+      SEED_DEMO: ${SEED_DEMO:-true}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?set DEMO_PASSWORD in .env}
+      CORS_ORIGINS: http://localhost:5173
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+  simulator:                       # optional: docker compose --profile simulator up
+    profiles: ["simulator"]
+    image: python:3.12-slim
+    depends_on:
+      backend: { condition: service_healthy }
+    volumes:
+      - ./simulator:/sim:ro
+    environment:
+      SIM_PASSWORD: ${DEMO_PASSWORD}
+    command: ["python", "/sim/simulate.py", "--api", "http://backend:8080", "--interval", "5"]
+
+volumes:
+  pgdata:

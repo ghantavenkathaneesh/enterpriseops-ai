@@ -1,0 +1,79 @@
+erDiagram
+    roles ||--o{ users : has
+    users ||--o{ tickets : reports
+    users |o--o{ tickets : "assigned to"
+    users |o--o{ assets : owns
+    users ||--o{ ticket_comments : writes
+    users ||--o{ notifications : receives
+    users |o--o{ audit_logs : performs
+    users |o--o{ incidents : "assigned to"
+    assets |o--o{ tickets : "related to"
+    assets |o--o{ incidents : affects
+    assets ||--o{ system_metrics : produces
+    assets ||--o{ anomaly_events : has
+    tickets ||--o{ ticket_comments : has
+    tickets |o--o{ incidents : "linked to"
+    tickets |o--o{ ai_predictions : "classified by"
+    system_metrics ||--o{ anomaly_events : triggers
+    incidents |o--o{ anomaly_events : "opened for"
+    sla_policies ||--o{ tickets : "sets due date by priority"
+    users { bigint id PK
+        string email UK
+        string full_name
+        bigint role_id FK
+        boolean active }
+    roles { bigint id PK
+        string name UK }
+    tickets { bigint id PK
+        string title
+        string category
+        string priority
+        string status
+        bigint reporter_id FK
+        bigint assignee_id FK
+        bigint asset_id FK
+        timestamptz due_at
+        timestamptz resolved_at }
+    incidents { bigint id PK
+        string severity
+        string status
+        string source
+        bigint asset_id FK
+        bigint ticket_id FK
+        bigint assignee_id FK }
+    assets { bigint id PK
+        string asset_tag UK
+        string asset_type
+        string status
+        bigint owner_id FK }
+    system_metrics { bigint id PK
+        bigint asset_id FK
+        numeric cpu_percent
+        numeric ram_percent
+        numeric disk_percent
+        numeric network_mbps
+        boolean simulated }
+    anomaly_events { bigint id PK
+        bigint metric_id FK
+        bigint asset_id FK
+        string detection_source
+        bigint incident_id FK }
+    ai_predictions { bigint id PK
+        string kind
+        bigint ticket_id FK
+        string predicted_label
+        numeric confidence
+        string model_version }
+    notifications { bigint id PK
+        bigint user_id FK
+        boolean is_read }
+    audit_logs { bigint id PK
+        bigint actor_id FK
+        string action
+        string entity_type }
+    sla_policies { bigint id PK
+        string priority UK
+        int resolution_minutes }
+    ticket_comments { bigint id PK
+        bigint ticket_id FK
+        bigint author_id FK }

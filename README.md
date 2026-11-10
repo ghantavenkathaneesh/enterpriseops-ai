@@ -67,4 +67,3 @@ docs/         architecture, database, API, AI/ML, testing, interview prep
 - No refresh tokens, login rate limiting, password change, email notifications or audit-log page yet
 - No screenshots yet
 - Possible future work: Redis caching, Kafka ingestion, Kubernetes
-
