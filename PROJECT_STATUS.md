@@ -1,50 +1,38 @@
 # Project status
 
-Last updated at the end of this build session. Nothing below is marked "tested" unless it was actually run.
+Last updated 2026-11-10. Verification is recorded only when a command or workflow actually completed.
 
-## Checklist
+## Verified
 
-| Component | Written | Executed / verified | Notes |
-|---|---|---|---|
-| Synthetic data generator | yes | **yes** | 1,500 tickets, 3,000 metric rows |
-| Ticket classifier + anomaly detector | yes | **yes** | trained, saved, evaluated (synthetic, see docs/AI_ML.md) |
-| Model tests (5) | yes | **yes, pass** | |
-| FastAPI service (5 endpoints) | yes | no | FastAPI not installable offline; `py_compile` OK |
-| FastAPI endpoint tests | yes | no | needs fastapi, httpx, pytest |
-| PostgreSQL schema + migrations (12 tables) | yes | **partly** | structure checked via SQLite translation only; never run on PostgreSQL |
-| SQL reporting queries | yes | no | PostgreSQL-specific (`FILTER`, `date_trunc`, `EXTRACT`) |
-| Java backend (73 files: auth, users, tickets, incidents, assets, monitoring, analytics, notifications, audit, AI client, SSE, demo seeder) | yes | **no, never compiled** | no `javac`/Maven; only brace-balance and package checks |
-| JUnit / Mockito / Testcontainers tests | yes | no | |
-| React + TypeScript frontend (11 pages) | yes | **partly** | esbuild bundle OK (syntax + imports); no type-check, never rendered |
-| Playwright tests (3 specs) | yes | no | |
-| Metric simulator | yes | **yes** (logic) | generator tests pass; not run against a live API |
-| Postman collection (13 requests) | yes | no | valid JSON |
-| Dockerfiles x3, docker-compose.yml, .env.example | yes | no | YAML valid; Docker not available |
-| GitHub Actions CI | yes | no | YAML valid |
-| Documentation (README, architecture, DB + ER, API, AI/ML, testing, interview prep) | yes | n/a | ER and architecture diagrams are Mermaid source (PNG render failed in the sandbox) |
-| Screenshots | **no** | no | UI never run in a browser |
-| Git repository | initialised | no commits | no git identity configured; no remote, nothing pushed |
+| Component | Result | Evidence |
+|---|---|---|
+| Synthetic data generator and model training | Pass | Generated 1,500 synthetic tickets and 3,000 metric rows; classifier accuracy 0.96 and anomaly detector recall 1.0 on synthetic data. |
+| AI service tests | Pass | `pytest -q`: 12 passed locally on Python 3.13; CI also passed on Python 3.12. |
+| Database schema and simulator logic | Pass | SQLite migration checks and all 3 simulator logic checks passed locally and in CI. |
+| Java backend and PostgreSQL integration tests | Pass | `mvn -B verify` passed in GitHub Actions on Java 21, including Testcontainers with PostgreSQL. |
+| React and TypeScript production build | Pass | `npm run build` passed locally and in CI. Page-level code splitting keeps the initial bundle below the Vite warning threshold. |
+| Dependency audit | Pass | `npm audit`: 0 vulnerabilities after updating Vite and React Router. |
+| GitHub CI | Pass | The initial push completed all four existing CI jobs successfully. |
+| Full-stack browser E2E | Added, awaiting first run | The workflow now builds and starts Docker Compose, then runs Chromium flows for login, permissions, tickets, incidents, AI classification, and live monitoring. The next push will produce the first result. |
 
 ## Not implemented
-Screenshots; rendered diagram images; audit-log page in the UI; UI to link an incident to a ticket; password change; refresh tokens; login rate limiting; email notifications; Redis (no real need yet); Kafka and Kubernetes (optional future work).
 
-## Blocked by the build environment
-Compiling and testing Java (no Maven/javac), running PostgreSQL and Flyway, installing FastAPI/pytest/npm packages (no internet), Docker, browsers for Playwright and screenshots, pushing to GitHub (no repository access given).
+Screenshots and rendered diagram images; audit-log page in the UI; UI to link an incident to a ticket; password change; refresh tokens; login rate limiting; email notifications; Redis, Kafka and Kubernetes (optional future work).
 
-## Known risks to check first on a real machine
-1. Java compile errors are likely somewhere in 73 untested files. Run `mvn -B verify` and fix top-down.
-2. TypeScript errors are possible. Run `npm install && npm run typecheck`.
-3. SSE with stateless JWT security: if the live stream returns 401 or 403 after connecting, the async dispatch needs an extra security rule.
-4. Flyway or JPA mismatches (column type or name) would show at startup; `ddl-auto` is `none`, so mismatches surface as SQL errors at runtime, not at boot.
-5. Isolation Forest precision is only 0.59 on synthetic data (expected false alarms).
+## Remaining limits
 
-## Exact commands on a fully equipped computer
-```
-cp .env.example .env     # fill POSTGRES_PASSWORD, JWT_SECRET, DEMO_PASSWORD
-(cd ai-service && pip install -r requirements.txt && python scripts/generate_data.py && python scripts/train.py && pytest)
+- The full Compose stack cannot run in this Windows workspace because Docker and PostgreSQL are not installed. The GitHub Actions runner supplies Docker for backend integration tests and the new browser E2E job.
+- The Java backend and React frontend now compile in CI; database/API behavior is covered by the existing backend integration suite, but the browser E2E workflow still needs its first successful run.
+- The model metrics are from synthetic/template-derived data and should not be presented as real-world performance. The anomaly detector's precision is 0.59 and false alerts are expected.
+
+## Commands
+
+```sh
+(cd ai-service && python scripts/generate_data.py && python scripts/train.py && pytest -q)
+python database/validate_sqlite.py
+python simulator/test_simulate.py
 (cd backend && mvn -B verify)
-(cd frontend && npm install && npm run build)
-docker compose up --build
-docker compose --profile simulator up -d simulator
+(cd frontend && npm ci && npm run build)
+docker compose --profile simulator up --build --detach --wait
 (cd frontend && DEMO_PASSWORD=<value from .env> npx playwright test)
 ```

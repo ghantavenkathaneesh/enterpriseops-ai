@@ -7,6 +7,8 @@
 
 # build output and dependencies
 node_modules/
+.venv/
+enterpriseops-venv/
 dist/
 target/
 __pycache__/
