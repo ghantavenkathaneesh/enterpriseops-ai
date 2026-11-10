@@ -47,6 +47,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [ai-service, simulator-and-sql, backend, frontend]
+    env:
+      POSTGRES_PASSWORD: ci-postgres-password-only
+      JWT_SECRET: ci-only-secret-that-is-at-least-32-characters-long
+      DEMO_PASSWORD: CI-Demo-Pass-123
+      SEED_DEMO: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,11 +61,6 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
       - name: Start the full stack
-        env:
-          POSTGRES_PASSWORD: ci-postgres-password-only
-          JWT_SECRET: ci-only-secret-that-is-at-least-32-characters-long
-          DEMO_PASSWORD: CI-Demo-Pass-123
-          SEED_DEMO: "true"
         run: docker compose --profile simulator up --build --detach --wait
       - name: Wait for the browser app and API
         run: |
@@ -73,7 +73,7 @@ jobs:
           DEMO_PASSWORD: CI-Demo-Pass-123
       - name: Show service logs on failure
         if: failure()
-        run: docker compose --profile simulator logs --no-color
+        run: docker compose --profile simulator ps --all && docker compose --profile simulator logs --no-color
       - name: Stop the full stack
         if: always()
         run: docker compose --profile simulator down --volumes
