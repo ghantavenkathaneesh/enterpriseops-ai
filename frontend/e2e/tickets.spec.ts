@@ -10,7 +10,7 @@ test('employee creates a ticket and agent assigns it', async ({ browser }) => {
   await employee.getByRole('button', { name: 'New ticket' }).click();
   await employee.getByLabel('Title').fill(title);
   await employee.getByLabel('Description').fill('Paper jam on the third floor printer');
-  await employee.getByLabel('Category').selectOption('hardware');
+  await employee.getByRole('dialog').getByLabel('Category').selectOption('hardware');
   await employee.getByRole('button', { name: 'Create ticket' }).click();
   await expect(employee.getByText(title)).toBeVisible();
 

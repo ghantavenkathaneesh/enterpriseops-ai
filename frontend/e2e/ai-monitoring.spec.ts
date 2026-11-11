@@ -14,5 +14,5 @@ test('AI classification and live monitoring work against the running services', 
   await page.getByRole('link', { name: 'Monitoring' }).click();
   await expect(page.getByRole('heading', { name: 'Monitoring' })).toBeVisible();
   await expect(page.getByText('Live', { exact: true })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText(/CPU \d+%/).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/CPU \d+(?:\.\d+)?%/).first()).toBeVisible({ timeout: 20_000 });
 });
