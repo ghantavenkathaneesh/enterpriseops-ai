@@ -73,7 +73,10 @@ jobs:
           DEMO_PASSWORD: CI-Demo-Pass-123
       - name: Show service logs on failure
         if: failure()
-        run: docker compose --profile simulator ps --all && docker compose --profile simulator logs --no-color
+        run: |
+          docker compose --profile simulator ps --all
+          docker inspect --format '{{json .State.Health}}' enterpriseops-ai-frontend-1 || true
+          docker compose --profile simulator logs --no-color
       - name: Stop the full stack
         if: always()
         run: docker compose --profile simulator down --volumes
